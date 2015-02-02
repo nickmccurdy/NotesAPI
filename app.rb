@@ -1,6 +1,5 @@
 require 'sinatra'
 require 'sinatra/activerecord'
-require 'sinatra/json'
 
 # Configuration
 
@@ -14,33 +13,40 @@ end
 
 # Routes
 
+before do
+  content_type 'application/json'
+end
+
 error do
-  json env['sinatra.error'].name
+  env['sinatra.error'].name
 end
 
 get '/' do
-  json Note.all
+  Note.all.to_json
 end
 
 post '/' do
-  json Note.create(
-    name: params['name'],  
-    body: params['body']
-  )
+  note = Note.create
+  note.name = params[:name]
+  note.body = params[:body]
+  note.save
+  headers['Location'] = "/#{note._id}"
+  status 201
 end
 
 get '/:id' do
-  json Note.find params['id'].to_i
+  Note.find(params[:id]).to_json
 end
 
 put '/:id' do
-  note = Note.find params['id'].to_i
-  note.name = params['name']
-  note.body = params['body']
-  json note
+  note = Note.find params[:id]
+  note.name = params[:name]
+  note.body = params[:body]
+  headers['Location'] = "/#{note._id}"
+  status 201
 end
 
 delete '/:id' do
-  note = Note.find params['id'].to_i
-  json note.delete
+  Note.find(params[:id]).delete
+  status 204
 end
